@@ -34,17 +34,17 @@ import it.feio.android.analitica.exceptions.AnalyticsInstantiationException;
 import it.feio.android.analitica.exceptions.InvalidIdentifierException;
 import it.feio.android.omninotes.helpers.LanguageHelper;
 import it.feio.android.omninotes.helpers.notifications.NotificationsHelper;
-import org.acra.ACRA;
-import org.acra.annotation.AcraCore;
-import org.acra.annotation.AcraHttpSender;
-import org.acra.annotation.AcraToast;
-import org.acra.sender.HttpSender;
+//import org.acra.ACRA;
+//import org.acra.annotation.AcraCore;
+//import org.acra.annotation.AcraHttpSender;
+//import org.acra.annotation.AcraToast;
+//import org.acra.sender.HttpSender;
 
 
-@AcraCore(buildConfigClass = BuildConfig.class)
-@AcraHttpSender(uri = BuildConfig.CRASH_REPORTING_URL,
-    httpMethod = HttpSender.Method.POST)
-@AcraToast(resText = R.string.crash_toast)
+//@AcraCore(buildConfigClass = BuildConfig.class)
+//@AcraHttpSender(uri = BuildConfig.CRASH_REPORTING_URL,
+//    httpMethod = HttpSender.Method.POST)
+//@AcraToast(resText = R.string.crash_toast)
 public class OmniNotes extends MultiDexApplication {
 
   static SharedPreferences prefs;
@@ -68,12 +68,12 @@ public class OmniNotes extends MultiDexApplication {
     return getAppContext().getSharedPreferences(PREFS_NAME, MODE_MULTI_PROCESS);
   }
 
-  @Override
-  protected void attachBaseContext (Context base) {
-    super.attachBaseContext(base);
-    ACRA.init(this);
-    ACRA.getErrorReporter().putCustomData("TRACEPOT_DEVELOP_MODE", isDebugBuild() ? "1" : "0");
-  }
+  //@Override
+  //protected void attachBaseContext (Context base) {
+  //  super.attachBaseContext(base);
+  //  ACRA.init(this);
+  //  ACRA.getErrorReporter().putCustomData("TRACEPOT_DEVELOP_MODE", isDebugBuild() ? "1" : "0");
+  //}
 
   @Override
   public void onCreate () {
