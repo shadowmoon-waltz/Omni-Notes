@@ -18,6 +18,7 @@
 apply plugin: 'com.android.application'
 
 boolean signConfigExists = project.hasProperty("SIGN_PROPS") && new File(project.property("SIGN_PROPS")).exists()
+boolean signConfigExists2 = !signConfigExists && project.hasProperty("keystoreFile") && project.hasProperty("keystorePassword") && project.hasProperty("keystoreAlias") && project.hasProperty("keystoreAliasPassword")
 if (signConfigExists) {
     Properties props = new Properties()
     props.load(new FileInputStream(file(project.property("SIGN_PROPS"))))
@@ -33,23 +34,20 @@ if (signConfigExists) {
         }
     }
 }
-
-android {
-
-    if (project.hasProperty("SIGN_PROPS")
-            && new File(project.property("SIGN_PROPS").toString()).exists()) {
-        Properties props = new Properties()
-        props.load(new FileInputStream(file(project.property("SIGN_PROPS"))))
+else if (signConfigExists2) {
+    android {
         signingConfigs {
-            signConfig {
-                storeFile file(props['keystore'])
-                storePassword props['keystore.password']
-                keyAlias props['keystore.alias']
-                keyPassword props['keystore.alias.password']
+            release {
+                storeFile file(project.property("keystoreFile"))
+                storePassword project.property("keystorePassword")
+                keyAlias project.property("keystoreAlias")
+                keyPassword project.property("keystoreAliasPassword")
             }
         }
     }
+}
 
+android {
     compileSdkVersion Integer.parseInt(project.TARGET_SDK)
     buildToolsVersion project.BUILD_TOOLS
 
@@ -88,7 +86,7 @@ android {
                     outputFileName = "OmniNotes-${variant.name}-${variant.versionName}.apk"
                 }
             }
-            if (signConfigExists) {
+            if (signConfigExists || signConfigExists2) {
                 signingConfig signingConfigs.release
             }
         }
