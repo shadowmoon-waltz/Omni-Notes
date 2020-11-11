@@ -19,4 +19,7 @@ package it.feio.android.omninotes.helpers;
 
 public class GeocodeProviderFactory extends GeocodeProviderBaseFactory {
 
+  private GeocodeProviderFactory() {
+    // hides public constructor
+  }
 }

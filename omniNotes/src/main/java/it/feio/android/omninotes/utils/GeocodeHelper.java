@@ -18,7 +18,7 @@
 package it.feio.android.omninotes.utils;
 
 import static it.feio.android.omninotes.BuildConfig.MAPS_API_KEY;
-import static it.feio.android.omninotes.helpers.GeocodeProviderBaseFactory.getProvider;
+import static it.feio.android.omninotes.helpers.GeocodeProviderFactory.getProvider;
 
 import android.content.Context;
 import android.location.Address;

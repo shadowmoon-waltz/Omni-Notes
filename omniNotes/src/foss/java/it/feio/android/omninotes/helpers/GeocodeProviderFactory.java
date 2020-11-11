@@ -21,13 +21,15 @@ import android.content.Context;
 import io.nlopez.smartlocation.location.LocationProvider;
 import io.nlopez.smartlocation.location.providers.LocationManagerProvider;
 
-public class GeocodeProviderFactory {
+public class GeocodeProviderFactory extends GeocodeProviderBaseFactory {
 
   private GeocodeProviderFactory() {
     // hides public constructor
   }
 
   public static LocationProvider getProvider (Context context) {
+    promptHighAccuracyLocationProvider(context);
+
     return new LocationManagerProvider();
   }
 }
