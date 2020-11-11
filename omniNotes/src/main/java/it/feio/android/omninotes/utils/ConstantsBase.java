@@ -20,6 +20,7 @@ public interface ConstantsBase {
 
   String DATABASE_NAME = "omni-notes";
   String APP_STORAGE_DIRECTORY_SB_SYNC = "db_sync";
+  String APP_STORAGE_DIRECTORY_ATTACHMENTS = "files";
 
   String DEV_EMAIL = "omninotes@iosue.it";
   String GOOGLE_PLUS_COMMUNITY = "https://plus.google.com/communities/112276053772152071903";

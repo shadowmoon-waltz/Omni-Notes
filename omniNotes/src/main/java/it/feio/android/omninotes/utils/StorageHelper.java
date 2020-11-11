@@ -83,7 +83,12 @@ public class StorageHelper {
 
 
   public static File getAttachmentDir () {
-    return OmniNotes.getAppContext().getExternalFilesDir(null);
+    //return OmniNotes.getAppContext().getExternalFilesDir(null);
+    File dir = new File(OmniNotes.getAppContext().getFilesDir(), Constants.APP_STORAGE_DIRECTORY_ATTACHMENTS);
+    if (!dir.exists()) {
+      dir.mkdirs();
+    }
+    return dir;
   }
 
 
@@ -236,7 +241,7 @@ public class StorageHelper {
   public static File createNewAttachmentFile (Context mContext, String extension) {
     File f = null;
     if (checkStorage()) {
-      f = new File(mContext.getExternalFilesDir(null), createNewAttachmentName(extension));
+      f = new File(getAttachmentDir(), createNewAttachmentName(extension));
     }
     return f;
   }
