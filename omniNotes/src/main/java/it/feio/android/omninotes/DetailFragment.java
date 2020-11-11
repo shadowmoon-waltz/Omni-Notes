@@ -2243,7 +2243,13 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
           .simple_text_layout));
       final MaterialDialog dialog = new MaterialDialog.Builder(mainActivityWeakReference.get())
           .customView(autoCompView, false)
+          .neutralText(R.string.use_current_location_raw)
           .positiveText(R.string.use_current_location)
+          .onNeutral((dialog1, which) -> {
+              noteTmpWeakReference.get().setLatitude(location.getLatitude());
+              noteTmpWeakReference.get().setLongitude(location.getLongitude());
+              detailFragmentWeakReference.get().onAddressResolved("");
+          })
           .onPositive((dialog1, which) -> {
             if (TextUtils.isEmpty(autoCompView.getText().toString())) {
               noteTmpWeakReference.get().setLatitude(location.getLatitude());
@@ -2264,9 +2270,13 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
         @Override
         public void onTextChanged (CharSequence s, int start, int before, int count) {
           if (s.length() != 0) {
+            dialog.setActionButton(DialogAction.NEUTRAL, null);
             dialog.setActionButton(DialogAction.POSITIVE, mainActivityWeakReference.get().getString(R
                 .string.confirm));
           } else {
+            dialog.setActionButton(DialogAction.NEUTRAL, mainActivityWeakReference.get().getString(R
+                .string
+                .use_current_location_raw));
             dialog.setActionButton(DialogAction.POSITIVE, mainActivityWeakReference.get().getString(R
                 .string
                 .use_current_location));
