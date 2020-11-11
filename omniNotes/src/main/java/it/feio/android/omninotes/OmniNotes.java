@@ -103,14 +103,15 @@ public class OmniNotes extends MultiDexApplication {
 
   public AnalyticsHelper getAnalyticsHelper () {
     if (analyticsHelper == null) {
-      boolean enableAnalytics = prefs.getBoolean(PREF_SEND_ANALYTICS, true);
-      try {
-        String[] analyticsParams = BuildConfig.ANALYTICS_PARAMS.split(PROPERTIES_PARAMS_SEPARATOR);
-        analyticsHelper = new AnalyticsHelperFactory().getAnalyticsHelper(this, enableAnalytics,
-            analyticsParams);
-      } catch (AnalyticsInstantiationException | InvalidIdentifierException e) {
-        analyticsHelper = new MockAnalyticsHelper();
-      }
+      //boolean enableAnalytics = prefs.getBoolean(PREF_SEND_ANALYTICS, true);
+      //try {
+      //  String[] analyticsParams = BuildConfig.ANALYTICS_PARAMS.split(PROPERTIES_PARAMS_SEPARATOR);
+      //  analyticsHelper = new AnalyticsHelperFactory().getAnalyticsHelper(this, enableAnalytics,
+      //      analyticsParams);
+      //} catch (AnalyticsInstantiationException | InvalidIdentifierException e) {
+      //  analyticsHelper = new MockAnalyticsHelper();
+      //}
+      analyticsHelper = new MockAnalyticsHelper();
     }
     return analyticsHelper;
   }
