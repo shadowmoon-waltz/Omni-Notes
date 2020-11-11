@@ -21,7 +21,6 @@ import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 import static androidx.core.view.ViewCompat.animate;
 import static it.feio.android.omninotes.BaseActivity.TRANSITION_HORIZONTAL;
 import static it.feio.android.omninotes.BaseActivity.TRANSITION_VERTICAL;
-import static it.feio.android.omninotes.BuildConfig.MAPS_API_KEY;
 import static it.feio.android.omninotes.MainActivity.FRAGMENT_DETAIL_TAG;
 import static it.feio.android.omninotes.utils.ConstantsBase.ACTION_DISMISS;
 import static it.feio.android.omninotes.utils.ConstantsBase.ACTION_FAB_TAKE_PHOTO;
@@ -122,7 +121,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.google.android.material.snackbar.Snackbar;
 import com.neopixl.pixlui.components.edittext.EditText;
 import com.neopixl.pixlui.components.textview.TextView;
 import com.pushbullet.android.extension.MessagingExtension;
@@ -2330,11 +2328,7 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
           takeSketch(null);
           break;
         case R.id.location:
-          if (TextUtils.isEmpty(MAPS_API_KEY)) {
-            Snackbar.make(snackBarPlaceholder, getString(R.string.location_no_api_key), Snackbar.LENGTH_LONG).show();
-          } else {
-            displayLocationDialog();
-          }
+          displayLocationDialog();
           break;
         case R.id.timestamp:
           addTimestamp();
