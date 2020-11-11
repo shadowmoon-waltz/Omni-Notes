@@ -708,7 +708,7 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
           + "?q=" + noteTmp.getLatitude() + ',' + noteTmp.getLongitude();
       Intent locationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
       if (!IntentChecker.isAvailable(mainActivity, locationIntent, null)) {
-        uriString = "http://maps.google.com/maps?q=" + noteTmp.getLatitude() + ',' + noteTmp
+        uriString = "https://maps.google.com/maps?q=" + noteTmp.getLatitude() + ',' + noteTmp
             .getLongitude();
         locationIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uriString));
       }
