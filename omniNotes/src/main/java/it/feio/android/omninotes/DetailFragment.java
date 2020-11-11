@@ -2231,7 +2231,7 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
       if (!ConnectionManager.internetAvailable(mainActivityWeakReference.get())) {
         noteTmpWeakReference.get().setLatitude(location.getLatitude());
         noteTmpWeakReference.get().setLongitude(location.getLongitude());
-        onAddressResolved("");
+        detailFragmentWeakReference.get().onAddressResolved("");
         return;
       }
       LayoutInflater inflater = mainActivityWeakReference.get().getLayoutInflater();
