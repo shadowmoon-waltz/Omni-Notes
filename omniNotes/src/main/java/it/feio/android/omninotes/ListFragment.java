@@ -29,6 +29,7 @@ import static it.feio.android.omninotes.utils.ConstantsBase.INTENT_NOTE;
 import static it.feio.android.omninotes.utils.ConstantsBase.INTENT_WIDGET;
 import static it.feio.android.omninotes.utils.ConstantsBase.MENU_SORT_GROUP_ID;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_ENABLE_SWIPE;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SWIPE_TO_TRASH;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_EXPANDED_VIEW;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_FAB_EXPANSION_BEHAVIOR;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_FILTER_ARCHIVED_IN_CATEGORIES;
@@ -1245,7 +1246,7 @@ public class ListFragment extends BaseFragment implements OnViewTouchedListener,
             categorizeNotesExecute(null);
           } else {
             // ...trash
-            if (prefs.getBoolean("settings_swipe_to_trash", false)
+            if (prefs.getBoolean(PREF_SWIPE_TO_TRASH, false)
                 || Navigation.checkNavigation(Navigation.ARCHIVE)) {
               trashNotes(true);
               // ...archive

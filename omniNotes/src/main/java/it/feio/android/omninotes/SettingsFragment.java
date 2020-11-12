@@ -21,6 +21,7 @@ import static android.provider.Settings.System.DEFAULT_NOTIFICATION_URI;
 import static it.feio.android.omninotes.utils.Constants.PREFS_NAME;
 import static it.feio.android.omninotes.utils.ConstantsBase.DATABASE_NAME;
 import static it.feio.android.omninotes.utils.ConstantsBase.DATE_FORMAT_EXPORT;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SWIPE_TO_TRASH;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_AUTO_LOCATION;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_COLORS_APP_DEFAULT;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_ENABLE_FILE_LOGGING;
@@ -276,13 +277,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 //		});
 
     // Swiping action
-    final SwitchPreference swipeToTrash = findPreference("settings_swipe_to_trash");
+    final SwitchPreference swipeToTrash = findPreference(PREFS_SWIPE_TO_TRASH);
     if (swipeToTrash != null) {
-      if (prefs.getBoolean("settings_swipe_to_trash", false)) {
-        swipeToTrash.setChecked(true);
+      if (swipeToTrash.isChecked()) {
         swipeToTrash.setSummary(getResources().getString(R.string.settings_swipe_to_trash_summary_2));
       } else {
-        swipeToTrash.setChecked(false);
         swipeToTrash.setSummary(getResources().getString(R.string.settings_swipe_to_trash_summary_1));
       }
       swipeToTrash.setOnPreferenceChangeListener((preference, newValue) -> {
