@@ -99,7 +99,7 @@ android {
         }
         foss {
             dimension "standard"
-            applicationIdSuffix ".foss"
+            applicationIdSuffix ".sw"
         }
         beta {
             dimension "standard"

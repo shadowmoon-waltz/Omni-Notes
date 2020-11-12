@@ -26,7 +26,8 @@
     <intent
       android:action="action_shortcut_widget"
       android:targetClass="it.feio.android.omninotes.MainActivity"
-      android:targetPackage="it.feio.android.omninotes.foss" />
+      android:targetPackage="it.feio.android.omninotes.sw" />
+      <!-- android:targetPackage="it.feio.android.omninotes.foss" -->
   </shortcut>
   <shortcut
     android:enabled="true"
@@ -36,6 +37,7 @@
     <intent
       android:action="action_widget_take_photo"
       android:targetClass="it.feio.android.omninotes.MainActivity"
-      android:targetPackage="it.feio.android.omninotes.foss" />
+      android:targetPackage="it.feio.android.omninotes.sw" />
+      <!-- android:targetPackage="it.feio.android.omninotes.foss" -->
   </shortcut>
 </shortcuts>
