@@ -277,7 +277,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 //		});
 
     // Swiping action
-    final SwitchPreference swipeToTrash = findPreference(PREFS_SWIPE_TO_TRASH);
+    final SwitchPreference swipeToTrash = findPreference(PREF_SWIPE_TO_TRASH);
     if (swipeToTrash != null) {
       if (swipeToTrash.isChecked()) {
         swipeToTrash.setSummary(getResources().getString(R.string.settings_swipe_to_trash_summary_2));
