@@ -690,8 +690,9 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
 
     if (isNoteLocationValid()) {
       if (TextUtils.isEmpty(noteTmp.getAddress())) {
-        //FIXME: What's this "sasd"?
-        GeocodeHelper.getAddressFromCoordinates(new Location("sasd"), detailFragment);
+        // alternative: detailFragment.onAddressResolved("");
+        locationTextView.setText(noteTmp.getLatitude() + ", " + noteTmp.getLongitude());
+        locationTextView.setVisibility(View.VISIBLE);
       } else {
         locationTextView.setText(noteTmp.getAddress());
         locationTextView.setVisibility(View.VISIBLE);
