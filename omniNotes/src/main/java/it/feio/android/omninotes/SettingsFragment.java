@@ -25,6 +25,7 @@ import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SWIPE_TO_TRASH;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_AUTO_LOCATION;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_COLORS_APP_DEFAULT;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_ENABLE_FILE_LOGGING;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_MAX_VIDEO_SIZE;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_PASSWORD;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SHOW_UNCATEGORIZED;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SNOOZE_DEFAULT;
@@ -307,13 +308,13 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     // Maximum video attachment size
-    final EditTextPreference maxVideoSize = findPreference("settings_max_video_size");
+    final EditTextPreference maxVideoSize = findPreference(PREF_MAX_VIDEO_SIZE);
     if (maxVideoSize != null) {
       maxVideoSize.setSummary(getString(R.string.settings_max_video_size_summary) + ": "
-          + prefs.getString("settings_max_video_size", getString(R.string.not_set)));
+          + prefs.getString(PREF_MAX_VIDEO_SIZE, getString(R.string.not_set)));
       maxVideoSize.setOnPreferenceChangeListener((preference, newValue) -> {
         maxVideoSize.setSummary(getString(R.string.settings_max_video_size_summary) + ": " + newValue);
-        prefs.edit().putString("settings_max_video_size", newValue.toString()).apply();
+        prefs.edit().putString(PREF_MAX_VIDEO_SIZE, newValue.toString()).apply();
         return false;
       });
     }

@@ -53,6 +53,7 @@ import static it.feio.android.omninotes.utils.ConstantsBase.PREF_AUTO_LOCATION;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_COLORS_APP_DEFAULT;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_KEEP_CHECKED;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_KEEP_CHECKMARKS;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_MAX_VIDEO_SIZE;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_PASSWORD;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_PRETTIFIED_DATES;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_WIDGET_PREFIX;
@@ -1352,8 +1353,8 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
     attachmentUri = FileProviderHelper.getFileProvider(f);
     takeVideoIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
     takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, attachmentUri);
-    String maxVideoSizeStr = "".equals(prefs.getString("settings_max_video_size",
-        "")) ? "0" : prefs.getString("settings_max_video_size", "");
+    String maxVideoSizeStr = "".equals(prefs.getString(PREF_MAX_VIDEO_SIZE,
+        "")) ? "0" : prefs.getString(PREF_MAX_VIDEO_SIZE, "");
     long maxVideoSize = parseLong(maxVideoSizeStr) * 1024L * 1024L;
     takeVideoIntent.putExtra(MediaStore.EXTRA_SIZE_LIMIT, maxVideoSize);
     startActivityForResult(takeVideoIntent, TAKE_VIDEO);

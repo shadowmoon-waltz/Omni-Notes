@@ -91,6 +91,7 @@ public interface ConstantsBase {
   String PREF_WIDGET_PREFIX = "widget_";
   String PREF_SHOW_UNCATEGORIZED = "settings_show_uncategorized";
   String PREF_AUTO_LOCATION = "settings_auto_location";
+  String PREF_MAX_VIDEO_SIZE = "settings_max_video_size";
   String PREF_FILTER_PAST_REMINDERS = "settings_filter_past_reminders";
   String PREF_FILTER_ARCHIVED_IN_CATEGORIES = "settings_filter_archived_in_categories";
   String PREF_DYNAMIC_MENU = "settings_dynamic_menu";
