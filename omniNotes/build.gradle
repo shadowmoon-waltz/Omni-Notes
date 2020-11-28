@@ -48,6 +48,7 @@ else if (signConfigExists2) {
 }
 
 android {
+
     compileSdkVersion Integer.parseInt(project.TARGET_SDK)
     buildToolsVersion project.BUILD_TOOLS
 
@@ -195,7 +196,7 @@ dependencies {
     implementation('com.github.federicoiosue:Omni-Notes-Commons:1.2.0') {
         exclude group: 'org.projectlombok'
     }
-    implementation('com.github.federicoiosue:checklistview:4.0.0') {
+    implementation('com.github.federicoiosue:checklistview:4.1.0') {
         transitive = false
     }
     implementation 'com.github.federicoiosue:pixlui:3.0.0'
