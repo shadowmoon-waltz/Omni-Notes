@@ -87,6 +87,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Process;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.Selection;
@@ -1462,6 +1463,28 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
     } else {
       uris.add(intent.getData());
     }
+    
+    // https://stackoverflow.com/questions/50826019/is-read-external-storage-permission-ever-required-to-read-uri-from-intent-action
+    if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) !=
+        PackageManager.PERMISSION_GRANTED) {
+      int pid = Process.myPid();
+      int uid = Process.myUid();
+      for (Uri uri : uris) {
+        if (getContext().checkUriPermission(uri, pid, uid, Intent.FLAG_GRANT_READ_URI_PERMISSION) !=
+            PackageManager.PERMISSION_GRANTED) {
+          PermissionsHelper.requestPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE,
+              R.string.permission_external_storage_detail_attachment,
+              snackBarPlaceholder, () -> {
+                for (Uri uri2 : uris) {
+                  String name = FileHelper.getNameFromUri(mainActivity, uri2);
+                  new AttachmentTask(this, uri2, name, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                }
+              });
+          return;
+        }
+      }
+    }
+
     for (Uri uri : uris) {
       String name = FileHelper.getNameFromUri(mainActivity, uri);
       new AttachmentTask(this, uri, name, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -2182,12 +2205,6 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
     startActivityForResult(filesIntent, FILES);
   }
 
-  private void askReadExternalStoragePermission () {
-    PermissionsHelper.requestPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE,
-        R.string.permission_external_storage_detail_attachment,
-        snackBarPlaceholder, this::startGetContentAction);
-  }
-
   public void onEventMainThread (PushbulletReplyEvent pushbulletReplyEvent) {
     String text = getNoteContent() + System.getProperty("line.separator") + pushbulletReplyEvent.message;
     content.setText(text);
@@ -2329,12 +2346,7 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
           takeVideo();
           break;
         case R.id.files:
-          if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
-              PackageManager.PERMISSION_GRANTED) {
-            startGetContentAction();
-          } else {
-            askReadExternalStoragePermission();
-          }
+          startGetContentAction();
           break;
         case R.id.sketch:
           takeSketch(null);
