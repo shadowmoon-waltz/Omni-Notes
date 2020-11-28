@@ -84,6 +84,10 @@ public interface ConstantsBase {
   String PREF_PASSWORD = "password";
   String PREF_PASSWORD_QUESTION = "password_question";
   String PREF_PASSWORD_ANSWER = "password_answer";
+  String PREF_ENCRYPT_BACKUPS = "settings_encrypt_backups";
+  String PREF_OPENPGP_PROVIDER = "settings_openpgp_provider";
+  String PREF_OPENPGP_KEY = "settings_openpgp_key";
+  String PREF_SIGN_ENCRYPTED_BACKUPS = "settings_sign_encrypted_backups";
   String PREF_KEEP_CHECKED = "keep_checked";
   String PREF_KEEP_CHECKMARKS = "show_checkmarks";
   String PREF_EXPANDED_VIEW = "expanded_view";

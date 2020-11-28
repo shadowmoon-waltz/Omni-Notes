@@ -25,7 +25,11 @@ import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SWIPE_TO_TRASH;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_AUTO_LOCATION;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_COLORS_APP_DEFAULT;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_ENABLE_FILE_LOGGING;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_ENCRYPT_BACKUPS;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SIGN_ENCRYPTED_BACKUPS;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_MAX_VIDEO_SIZE;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_OPENPGP_PROVIDER;
+import static it.feio.android.omninotes.utils.ConstantsBase.PREF_OPENPGP_KEY;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_PASSWORD;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SHOW_UNCATEGORIZED;
 import static it.feio.android.omninotes.utils.ConstantsBase.PREF_SNOOZE_DEFAULT;
@@ -35,8 +39,10 @@ import static java.util.Collections.reverse;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.media.RingtoneManager;
@@ -79,18 +85,70 @@ import it.feio.android.omninotes.utils.PasswordHelper;
 import it.feio.android.omninotes.utils.ResourcesUtils;
 import it.feio.android.omninotes.utils.StorageHelper;
 import it.feio.android.omninotes.utils.SystemHelper;
+import it.feio.android.omninotes.widget.LongClickableSwitchPreference;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import org.openintents.openpgp.IOpenPgpService2;
+import org.openintents.openpgp.OpenPgpError;
+import org.openintents.openpgp.util.OpenPgpApi;
+import org.openintents.openpgp.util.OpenPgpAppPreference;
+import org.openintents.openpgp.util.OpenPgpKeyPreference;
+import org.openintents.openpgp.util.OpenPgpServiceConnection;
 
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
-  private SharedPreferences prefs;
+  private class MyOpenPgpCallback implements OpenPgpApi.IOpenPgpCallback {
 
+    @Override
+    public void onReturn(Intent result) {
+      switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_ERROR)) {
+        case OpenPgpApi.RESULT_CODE_SUCCESS:
+          if (!TextUtils.isEmpty(cachedBackupName) && cachedServiceConnection != null) {
+            BackupHelper.startBackupService(cachedBackupName, cachedOpenPgpProvider, cachedOpenPgpKey, cachedSignEncryptedBackups);
+          }
+          finishOpenPgpTestSign(false);
+          break;
+
+        case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+          PendingIntent pi = result.getParcelableExtra(OpenPgpApi.RESULT_INTENT);
+          try {
+            Activity act = (Activity) getContext();
+            act.startIntentSenderFromChild(
+                act, pi.getIntentSender(),
+                OPENPGP_TEST_SIGN_REQUEST_CODE, null, 0, 0, 0);
+          } catch (IntentSender.SendIntentException e) {
+            LogDelegate.e("OpenPgp failed to send user interaction intent (test sign): " + e);
+          }
+          break;
+
+        case OpenPgpApi.RESULT_CODE_ERROR:
+          OpenPgpError error = result.getParcelableExtra(OpenPgpApi.RESULT_ERROR);
+          LogDelegate.e("OpenPgp error (test sign): " + error.getMessage());
+          finishOpenPgpTestSign(true);
+          break;
+      }
+    }
+  }
+
+
+  private SharedPreferences prefs;
+  
+  private String cachedBackupName;
+  private String cachedOpenPgpProvider;
+  private long cachedOpenPgpKey;
+  private boolean cachedSignEncryptedBackups;
+  private OpenPgpServiceConnection cachedServiceConnection;
+  private ByteArrayInputStream cachedInputStream;
+  
   private static final int SPRINGPAD_IMPORT = 0;
   private static final int RINGTONE_REQUEST_CODE = 100;
+  public static final int OPENPGP_KEY_REQUEST_CODE = 200;
+  public static final int OPENPGP_TEST_SIGN_REQUEST_CODE = 300;
   public static final String XML_NAME = "xmlName";
 
 
@@ -147,6 +205,18 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     if (export != null) {
       export.setOnPreferenceClickListener(arg0 -> {
 
+        boolean encrypt = prefs.getBoolean(PREF_ENCRYPT_BACKUPS, false);
+        String openPgpProvider = (encrypt) ? prefs.getString(PREF_OPENPGP_PROVIDER, null) : null;
+        long openPgpKey = (encrypt) ? prefs.getLong(PREF_OPENPGP_KEY, 0) : 0;
+        boolean signEncryptedBackups = (encrypt) ? prefs.getBoolean(PREF_SIGN_ENCRYPTED_BACKUPS, true) : false;
+        if (encrypt && (TextUtils.isEmpty(openPgpProvider) || openPgpKey == 0)) {
+          new MaterialDialog.Builder(getContext())
+              .content(R.string.openpgp_not_configured)
+              .positiveText(R.string.ok)
+              .build().show();
+          return false;
+        }
+        
         // Inflate layout
         LayoutInflater inflater = getActivity().getLayoutInflater();
         View v = inflater.inflate(R.layout.dialog_backup_layout, null);
@@ -154,7 +224,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         // Finds actually saved backups names
         PermissionsHelper.requestPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE, R
             .string.permission_external_storage, getActivity().findViewById(R.id.crouton_handle), () -> export
-            (v));
+            (v, openPgpProvider, openPgpKey, signEncryptedBackups));
 
         return false;
       });
@@ -276,6 +346,30 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 //				return false;
 //			}
 //		});
+
+    final LongClickableSwitchPreference encryptBackups = findPreference(PREF_ENCRYPT_BACKUPS);
+    if (encryptBackups != null) {
+      encryptBackups.setOnPreferenceLongClickListener(v -> {
+        new MaterialDialog.Builder(getContext())
+            .content(R.string.settings_encrypt_backups_summary_2)
+            .positiveText(R.string.ok)
+            .build().show();
+        return false;
+      });
+    }
+    
+    final OpenPgpAppPreference openPgpProvider = findPreference(PREF_OPENPGP_PROVIDER);
+    final OpenPgpKeyPreference openPgpKey = findPreference(PREF_OPENPGP_KEY);
+    if (openPgpKey != null) {
+      openPgpKey.setIntentRequestCode(OPENPGP_KEY_REQUEST_CODE);
+      if (openPgpProvider != null) {
+        openPgpKey.setOpenPgpProvider(openPgpProvider.getValue());
+        openPgpProvider.setOnPreferenceChangeListener((preference, newValue) -> {
+          openPgpKey.setOpenPgpProvider((String) newValue);
+          return true;
+        });
+      }
+    }
 
     // Swiping action
     final SwitchPreference swipeToTrash = findPreference(PREF_SWIPE_TO_TRASH);
@@ -613,7 +707,40 @@ public class SettingsFragment extends PreferenceFragmentCompat {
   }
 
 
-  private void export (View v) {
+  public void attemptOpenPgpTestSign(Intent data) {
+    if (cachedOpenPgpKey != 0 && cachedServiceConnection != null) {
+      data.setAction(OpenPgpApi.ACTION_DETACHED_SIGN);
+      data.putExtra(OpenPgpApi.EXTRA_SIGN_KEY_ID, cachedOpenPgpKey);
+      data.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, false);
+      
+      byte[] bytes = new byte[42];
+      Arrays.fill(bytes, (byte)(42));
+
+      OpenPgpApi api = new OpenPgpApi(getContext(), cachedServiceConnection.getService());
+      api.executeApiAsync(data, new ByteArrayInputStream(bytes), null, new MyOpenPgpCallback());
+    }
+  }
+
+
+  private void finishOpenPgpTestSign(boolean showError) {
+    cachedBackupName = null;
+    cachedOpenPgpProvider = null;
+    cachedOpenPgpKey = 0;
+    cachedSignEncryptedBackups = false;
+    if (cachedServiceConnection != null) {
+      cachedServiceConnection.unbindFromService();
+    }
+    cachedServiceConnection = null;
+    if (showError) {
+      new MaterialDialog.Builder(getContext())
+          .content(R.string.encrypted_backup_error)
+          .positiveText(R.string.ok)
+          .build().show();
+    }
+  }
+
+
+  private void export (View v, String openPgpProvider, long openPgpKey, boolean signEncryptedBackups) {
     final List<String> backups = asList(StorageHelper.getExternalStoragePublicDir().list());
 
     // Sets default export file name
@@ -621,7 +748,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     String fileName = sdf.format(Calendar.getInstance().getTime());
     final EditText fileNameEditText = v.findViewById(R.id.export_file_name);
     final TextView backupExistingTextView = v.findViewById(R.id.backup_existing);
-    fileNameEditText.setHint(fileName);
+    boolean encrypt = (!TextUtils.isEmpty(openPgpProvider) && openPgpKey != 0);
+    fileNameEditText.setHint((!encrypt) ? fileName : ("ON-" + fileName + ".zip.gpg"));
     fileNameEditText.addTextChangedListener(new TextWatcher() {
       @Override
       public void onTextChanged (CharSequence arg0, int arg1, int arg2, int arg3) {
@@ -654,7 +782,31 @@ public class SettingsFragment extends PreferenceFragmentCompat {
               AnalyticsHelper.CATEGORIES.SETTING, "settings_export_data");
           String backupName = TextUtils.isEmpty(fileNameEditText.getText().toString()) ?
               fileNameEditText.getHint().toString() : fileNameEditText.getText().toString();
-          BackupHelper.startBackupService(backupName);
+          if (encrypt) {
+            cachedBackupName = backupName;
+            cachedOpenPgpProvider = openPgpProvider;
+            cachedOpenPgpKey = openPgpKey;
+            cachedSignEncryptedBackups = signEncryptedBackups;
+            cachedServiceConnection = new OpenPgpServiceConnection(
+              getContext().getApplicationContext(),
+              openPgpProvider,
+              new OpenPgpServiceConnection.OnBound() {
+                @Override
+                public void onBound(IOpenPgpService2 service) {
+                  attemptOpenPgpTestSign(new Intent());
+                }
+
+                @Override
+                public void onError(Exception e) {
+                  LogDelegate.e("OpenPgp exception on service binding (test sign): " + e);
+                  finishOpenPgpTestSign(true);
+                }
+              }
+            );
+            cachedServiceConnection.bindToService();
+          } else {
+            BackupHelper.startBackupService(backupName, null, 0, false);
+          }
         }).show();
   }
 
@@ -689,6 +841,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         default:
           LogDelegate.e("Wrong element choosen: " + requestCode);
       }
+    }
+  }
+
+
+  public void onOpenPgpKeySelected (int requestCode, int resultCode, Intent intent) {
+    final OpenPgpKeyPreference openPgpKey = findPreference(PREF_OPENPGP_KEY);
+    if (openPgpKey != null) {
+      openPgpKey.handleOnActivityResult(requestCode, resultCode, intent);
     }
   }
 }

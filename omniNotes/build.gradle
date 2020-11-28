@@ -230,6 +230,8 @@ dependencies {
     //fossImplementation 'com.jakewharton.timber:timber:4.5.1'
 
     testImplementation 'junit:junit:4.12'
+    
+    implementation 'com.github.shadowmoon-waltz:openpgp-api-jetpack:20201118'
 }
 
 configurations.all {

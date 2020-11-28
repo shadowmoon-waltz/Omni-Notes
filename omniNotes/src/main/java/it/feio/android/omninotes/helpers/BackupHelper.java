@@ -33,22 +33,30 @@ import it.feio.android.omninotes.models.Note;
 import it.feio.android.omninotes.utils.StorageHelper;
 import it.feio.android.omninotes.utils.TextHelper;
 import it.feio.android.omninotes.helpers.notifications.NotificationsHelper;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.IOUtils;
 import org.bitbucket.cowwoc.diffmatchpatch.DiffMatchPatch;
 import rx.Observable;
+
 
 public final class BackupHelper {
 
@@ -60,6 +68,16 @@ public final class BackupHelper {
     for (Note note : DbHelper.getInstance(true).getAllNotes(false)) {
       exportNote(backupDir, note);
     }
+  }
+
+
+  public static boolean exportNotes (ZipOutputStream zos) {
+    for (Note note : DbHelper.getInstance(true).getAllNotes(false)) {
+      if (!exportNote(zos, note)) {
+        return false;
+      }
+    }
+    return true;
   }
 
 
@@ -78,6 +96,19 @@ public final class BackupHelper {
   }
 
 
+  public static boolean exportNote (ZipOutputStream zos, Note note) {
+    try {
+      zos.putNextEntry(new ZipEntry(note.get_id() + ".json"));
+      zos.write(note.toJSON().getBytes(StandardCharsets.UTF_8));
+      zos.closeEntry();
+    } catch (Exception e) {
+      LogDelegate.e("Error backing up note (archive saving failed) (note " + note.get_id() + "): " + e);
+      return false;
+    }
+    return true;
+  }
+
+
   /**
    * Export attachments to backup folder
    *
@@ -85,6 +116,11 @@ public final class BackupHelper {
    */
   public static boolean exportAttachments (File backupDir) {
     return exportAttachments(backupDir, null);
+  }
+
+
+  public static boolean exportAttachments (ZipOutputStream zos) {
+    return exportAttachments(zos, null);
   }
 
 
@@ -97,6 +133,13 @@ public final class BackupHelper {
     File destinationattachmentsDir = new File(backupDir, StorageHelper.getAttachmentDir().getName());
     ArrayList<Attachment> list = DbHelper.getInstance().getAllAttachments();
     exportAttachments(notificationsHelper, destinationattachmentsDir, list, null);
+    return true;
+  }
+  
+  public static boolean exportAttachments (ZipOutputStream zos, NotificationsHelper notificationsHelper) {
+    String destinationattachmentsDir = StorageHelper.getAttachmentDir().getName();
+    ArrayList<Attachment> list = DbHelper.getInstance().getAllAttachments();
+    exportAttachments(notificationsHelper, zos, destinationattachmentsDir, list);
     return true;
   }
 
@@ -134,6 +177,48 @@ public final class BackupHelper {
               .forEach(attachment -> StorageHelper.delete(OmniNotes.getAppContext(), new File
                   (destinationattachmentsDir.getAbsolutePath(),
                       attachment.getUri().getLastPathSegment()).getAbsolutePath()));
+
+    return result;
+  }
+
+  public static boolean exportAttachments (NotificationsHelper notificationsHelper, ZipOutputStream zos,
+      String destinationattachmentsDir, List<Attachment> list) {
+
+    boolean result = true;
+
+    int exported = 0;
+    int failed = 0;
+    boolean earlyExit = false;
+    for (Attachment attachment : list) {
+      try (InputStream is = OmniNotes.getAppContext().getContentResolver().openInputStream(attachment.getUri())) {
+        String destFilename = destinationattachmentsDir + System.getProperty("file.separator") +
+            FilenameUtils.getName(attachment.getUriPath());
+        zos.putNextEntry(new ZipEntry(destFilename));
+        IOUtils.copy(is, zos);
+        zos.closeEntry();
+        ++exported;
+      } catch (FileNotFoundException e) {
+        LogDelegate.w("Attachment not found during backup: " + attachment.getUriPath());
+        ++failed;
+        result = false;
+      } catch (Exception e) {
+        LogDelegate.e("Error backing up attachment (archive saving failed) (attachment " + attachment.getUriPath() + "): " + e);
+        earlyExit = true;
+      }
+
+      String failedString = failed > 0 ? " (" + failed + " " + OmniNotes.getAppContext().getString(R.string.failed) + ")" : "";
+      if (notificationsHelper != null) {
+        notificationsHelper.updateMessage((!earlyExit) ?
+            (TextHelper.capitalize(OmniNotes.getAppContext().getString(R.string.attachment))
+                + " " + exported + "/" + list.size() + failedString) :
+                OmniNotes.getAppContext().getString(R.string.encrypted_backup_error)
+        );
+      }
+      
+      if (earlyExit) {
+        return false;
+      }
+    }
 
     return result;
   }
@@ -250,10 +335,14 @@ public final class BackupHelper {
    *
    * @param backupFolderName subfolder of the app's external sd folder where notes will be stored
    */
-  public static void startBackupService (String backupFolderName) {
+  public static void startBackupService (String backupFolderName, String openPgpProvider,
+      long openPgpKey, boolean signEncryptedBackups) {
     Intent service = new Intent(OmniNotes.getAppContext(), DataBackupIntentService.class);
     service.setAction(DataBackupIntentService.ACTION_DATA_EXPORT);
     service.putExtra(DataBackupIntentService.INTENT_BACKUP_NAME, backupFolderName);
+    service.putExtra(DataBackupIntentService.INTENT_OPENPGP_PROVIDER, openPgpProvider);
+    service.putExtra(DataBackupIntentService.INTENT_OPENPGP_KEY, openPgpKey);
+    service.putExtra(DataBackupIntentService.INTENT_SIGN_ENCRYPTED_BACKUPS, signEncryptedBackups);
     OmniNotes.getAppContext().startService(service);
   }
 
@@ -264,6 +353,20 @@ public final class BackupHelper {
   public static boolean exportSettings (File backupDir) {
     File preferences = StorageHelper.getSharedPreferencesFile(OmniNotes.getAppContext());
     return (StorageHelper.copyFile(preferences, new File(backupDir, preferences.getName())));
+  }
+
+
+  public static boolean exportSettings (ZipOutputStream zos) {
+    File preferences = StorageHelper.getSharedPreferencesFile(OmniNotes.getAppContext());
+    try {
+      zos.putNextEntry(new ZipEntry(preferences.getName()));
+      IOUtils.copy(new FileInputStream(preferences), zos);
+      zos.closeEntry();
+    } catch (Exception e) {
+      LogDelegate.e("Error backing up settings (archive saving failed): " + e);
+      return false;
+    }
+    return true;
   }
 
 

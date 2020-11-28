@@ -25,6 +25,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import it.feio.android.omninotes.MainActivity;
 import it.feio.android.omninotes.OmniNotes;
 import it.feio.android.omninotes.R;
@@ -39,11 +40,26 @@ import it.feio.android.omninotes.utils.ReminderHelper;
 import it.feio.android.omninotes.utils.StorageHelper;
 import it.feio.android.omninotes.helpers.notifications.NotificationChannels.NotificationChannelNames;
 import it.feio.android.omninotes.helpers.notifications.NotificationsHelper;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.zip.ZipOutputStream;
+import org.openintents.openpgp.IOpenPgpService2;
+import org.openintents.openpgp.OpenPgpError;
+import org.openintents.openpgp.util.OpenPgpApi;
+import org.openintents.openpgp.util.OpenPgpServiceConnection;
 
 public class DataBackupIntentService extends IntentService implements OnAttachingFileListener {
 
   public static final String INTENT_BACKUP_NAME = "backup_name";
+  public static final String INTENT_OPENPGP_PROVIDER = "openpgp_provider";
+  public static final String INTENT_OPENPGP_KEY = "openpgp_key";
+  public static final String INTENT_SIGN_ENCRYPTED_BACKUPS = "sign_encrypted_backups";
   public static final String INTENT_BACKUP_INCLUDE_SETTINGS = "backup_include_settings";
   public static final String ACTION_DATA_EXPORT = "action_data_export";
   public static final String ACTION_DATA_IMPORT = "action_data_import";
@@ -52,6 +68,7 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
 
   private SharedPreferences prefs;
   private NotificationsHelper mNotificationsHelper;
+  private OpenPgpServiceConnection mOpenPgpConnection;
 
 //    {
 //        File autoBackupDir = StorageHelper.getBackupDir(Constants.AUTO_BACKUP_DIR);
@@ -94,27 +111,161 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
 
     boolean result = true;
 
+    String openPgpProvider = intent.getStringExtra(INTENT_OPENPGP_PROVIDER);
+    long openPgpKey = intent.getLongExtra(INTENT_OPENPGP_KEY, 0);
+    boolean encrypt = (!TextUtils.isEmpty(openPgpProvider));
+    boolean signEncryptedBackups = intent.getBooleanExtra(INTENT_SIGN_ENCRYPTED_BACKUPS, true);
+    
     // Gets backup folder
+    boolean backupSettings = intent.getBooleanExtra(INTENT_BACKUP_INCLUDE_SETTINGS, true);
     String backupName = intent.getStringExtra(INTENT_BACKUP_NAME);
-    File backupDir = StorageHelper.getBackupDir(backupName);
+    File backupDir = (!encrypt) ? StorageHelper.getBackupDir(backupName) : StorageHelper.getBackupArchive(backupName);
 
     // Directory clean in case of previously used backup name
-    StorageHelper.delete(this, backupDir.getAbsolutePath());
-
-    // Directory is re-created in case of previously used backup name (removed above)
-    backupDir = StorageHelper.getBackupDir(backupName);
-
-    BackupHelper.exportNotes(backupDir);
-
-    result = BackupHelper.exportAttachments(backupDir, mNotificationsHelper);
-
-    if (intent.getBooleanExtra(INTENT_BACKUP_INCLUDE_SETTINGS, true)) {
-      BackupHelper.exportSettings(backupDir);
+    if (backupDir.exists()) {
+      StorageHelper.delete(this, backupDir.getAbsolutePath());
+    }
+    
+    if (!encrypt) {
+      // Directory is re-created in case of previously used backup name (removed above)
+      backupDir = StorageHelper.getBackupDir(backupName);
     }
 
-    String notificationMessage =
-        result ? getString(R.string.data_export_completed) : getString(R.string.data_export_failed);
-    mNotificationsHelper.finish(intent, notificationMessage);
+    if (encrypt) {
+      final File backupDir2 = backupDir;
+      mOpenPgpConnection = new OpenPgpServiceConnection(
+        OmniNotes.getAppContext(),
+        openPgpProvider,
+        new OpenPgpServiceConnection.OnBound() {
+          private void cleanup(boolean result) {
+            mOpenPgpConnection = null;
+            if (mNotificationsHelper != null) {
+              String notificationMessage =
+                  result ? getString(R.string.data_export_completed) : getString(R.string.data_export_failed);
+              mNotificationsHelper.finish(new Intent(), notificationMessage);
+            }
+          }
+          
+          @Override
+          public synchronized void onBound(IOpenPgpService2 service) {
+            boolean result = false;
+            if (mOpenPgpConnection != null) {
+              try (PipedInputStream pis = new PipedInputStream();
+                   PipedOutputStream pos = new PipedOutputStream(pis);
+                   ZipOutputStream zos = new ZipOutputStream(pos);
+                   FileOutputStream fos = new FileOutputStream(backupDir2)) {
+                
+                Intent data = new Intent();
+                data.setAction((signEncryptedBackups) ? OpenPgpApi.ACTION_SIGN_AND_ENCRYPT : OpenPgpApi.ACTION_ENCRYPT);
+                data.putExtra(OpenPgpApi.EXTRA_KEY_IDS, new long[]{openPgpKey});
+                if (signEncryptedBackups) {
+                  data.putExtra(OpenPgpApi.EXTRA_SIGN_KEY_ID, openPgpKey);
+                }
+                data.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, false);
+
+                data.putExtra(OpenPgpApi.EXTRA_ORIGINAL_FILENAME, ((backupName.endsWith(".gpg")) ?
+                  backupName.substring(0, backupName.length() - 4) : backupName));
+                
+                // we disable openpgp gzip compression, as we use zip compression (enabled by default)
+                data.putExtra(OpenPgpApi.EXTRA_ENABLE_COMPRESSION, false);
+                
+                // consider replacing fos with a bufferedoutputstream writing to fos
+                FutureTask<Boolean> task = new FutureTask<>(() -> {
+                  OpenPgpApi api = new OpenPgpApi(OmniNotes.getAppContext(), mOpenPgpConnection.getService());
+                  LogDelegate.w("About to call executeApi");
+                  Intent ri = api.executeApi(data, pis, fos);
+                  LogDelegate.w("Finished executeApi");
+                  
+                  switch (ri.getIntExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_ERROR)) {
+                    case OpenPgpApi.RESULT_CODE_SUCCESS:
+                      LogDelegate.w("RESULT_CODE_SUCCESS");
+                      return true;
+                    
+                    // shouldn't happen; that's why we did a test sign
+                    case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+                      LogDelegate.e("OpenPgp backup failed (wanted user interaction in backup service) (encrypted backup)");
+                      return false;
+                    
+                    case OpenPgpApi.RESULT_CODE_ERROR:
+                    default:
+                      OpenPgpError error = ri.getParcelableExtra(OpenPgpApi.RESULT_ERROR);
+                      LogDelegate.e("OpenPgp error (encrypted backup): " + error.getMessage());
+                      return false;
+                  }
+                });
+                
+                ExecutorService es = Executors.newSingleThreadExecutor();
+                es.execute(task);
+                
+                try {
+                  result = BackupHelper.exportNotes(zos);
+                  
+                  if (result) {
+                    result = BackupHelper.exportAttachments(zos, mNotificationsHelper);
+                  }
+
+                  if (result && backupSettings) {
+                    result = BackupHelper.exportSettings(zos);
+                  }
+                } catch (Exception e) {
+                  LogDelegate.e("Encrypted backup failed (in export sequence try block): " + e);
+                  result = false;
+                }
+
+                LogDelegate.w("export data write done");
+                
+                try {
+                  zos.flush();
+                  zos.close();
+                  pos.flush();
+                  pos.close();
+                  
+                  LogDelegate.w("about to wait on api thread");
+                  
+                  boolean result2 = task.get();
+                  if (result) {
+                    result = result2;
+                  }
+                  
+                  es.shutdown();
+                }
+                catch (Exception e) {
+                  LogDelegate.e("Encrypted backup failed (in openpgp wait try block): " + e);
+                  result = false;
+                }
+              } catch (Exception e) {
+                LogDelegate.e("Encrypted backup failed (in outer try block): " + e);
+                result = false;
+              }
+            } else {
+              LogDelegate.w("Encrypted backup service connection callback called but service connection is null");
+            }
+            cleanup(result);
+            
+            LogDelegate.w("Exiting OnBound");
+          }
+
+          @Override
+          public synchronized void onError(Exception e) {
+            LogDelegate.e("OpenPgp exception on service binding (encrypted backup): " + e);
+            cleanup(false);
+          }
+        }
+      );
+      mOpenPgpConnection.bindToService();      
+    } else {
+      BackupHelper.exportNotes(backupDir);
+
+      result = BackupHelper.exportAttachments(backupDir, mNotificationsHelper);
+
+      if (backupSettings) {
+        BackupHelper.exportSettings(backupDir);
+      }
+      
+      String notificationMessage =
+          result ? getString(R.string.data_export_completed) : getString(R.string.data_export_failed);
+      mNotificationsHelper.finish(intent, notificationMessage);
+    }
   }
 
 

@@ -17,6 +17,7 @@
 
 package it.feio.android.omninotes;
 
+import android.app.Activity;
 import androidx.fragment.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
@@ -137,5 +138,27 @@ public class SettingsActivity extends AppCompatActivity implements
                                .addToBackStack(null)
                                .commit();
     return true;
+  }
+
+
+  @Override
+  public void onActivityResult (int requestCode, int resultCode, Intent intent) {
+    if (resultCode == Activity.RESULT_OK) {
+      boolean openPgpKey = (requestCode == SettingsFragment.OPENPGP_KEY_REQUEST_CODE);
+      boolean openPgpTestSign = (requestCode == SettingsFragment.OPENPGP_TEST_SIGN_REQUEST_CODE);
+      if (!openPgpKey && !openPgpTestSign) {
+        return;
+      }
+      
+      final Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.content_frame);
+      if (fragment != null && fragment instanceof SettingsFragment) {
+        if (openPgpKey) {
+          ((SettingsFragment)fragment).onOpenPgpKeySelected(requestCode, resultCode, intent);
+        }
+        if (openPgpTestSign) {
+          ((SettingsFragment)fragment).attemptOpenPgpTestSign(intent);
+        }
+      }
+    }
   }
 }

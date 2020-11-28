@@ -318,6 +318,11 @@ public class StorageHelper {
   }
 
 
+  public static File getBackupArchive (String backupName) {
+    File backupArchive = new File(getExternalStoragePublicDir(), backupName);
+    return backupArchive;
+  }
+  
   public static File getSharedPreferencesFile (Context mContext) {
     File appData = mContext.getFilesDir().getParentFile();
     String packageName = mContext.getApplicationContext().getPackageName();

@@ -247,6 +247,14 @@
     <string name="settings_import_from_springpad_summary">Select your Springpad exported archive and be sure to be connected to internet</string>
     <string name="settings_sync_drive">Sync with Google Drive</string>
     <string name="settings_sync_drive_summary">Register the application to synchronize data on Google Drive storage service</string>
+    <string name="settings_encrypt_backups">Encrypt (zip) backups with OpenPGP</string>
+    <string name="settings_encrypt_backups_summary_1">Long-press for more info</string>
+    <string name="settings_encrypt_backups_summary_2">Backups will be saved as OpenPGP-encrypted .zip files. This will only work if an OpenPGP provider, such as OpenKeychain, is installed and configured. Changing this setting does not change format of previous backups. Regardless of this setting, non-archive and probable .zip.gpg archives in the backup directory will be shown when browsing backups to restore.</string>
+    <string name="openpgp_not_configured">An OpenPGP provider and key must be selected in order to perform encrypted backups.</string>
+    <string name="settings_openpgp_provider">Select OpenPGP provider</string>
+    <string name="settings_openpgp_key">Select OpenPGP key</string>
+    <string name="encrypted_backup_error">Error while performing encrypted backup</string>
+    <string name="settings_sign_encrypted_backups">Sign encrypted backups</string>
     <string name="export_success">File exported successfully into folder</string>
     <string name="export_fail">File export failed</string>
     <string name="import_success">File imported successfully</string>

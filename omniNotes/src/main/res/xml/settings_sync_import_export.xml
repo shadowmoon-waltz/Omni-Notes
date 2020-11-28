@@ -54,4 +54,30 @@
     android:title="@string/settings_import_from_springpad"
     app:iconSpaceReserved="false" />
 
+  <it.feio.android.omninotes.widget.LongClickableSwitchPreference
+    android:defaultValue="false"
+    android:key="settings_encrypt_backups"
+    android:summary="@string/settings_encrypt_backups_summary_1"
+    android:title="@string/settings_encrypt_backups"
+    app:iconSpaceReserved="false" />
+
+  <org.openintents.openpgp.util.OpenPgpAppPreference
+    android:dependency="settings_encrypt_backups"
+    android:key="settings_openpgp_provider"
+    android:title="@string/settings_openpgp_provider"
+    app:iconSpaceReserved="false" />
+
+  <org.openintents.openpgp.util.OpenPgpKeyPreference
+    android:dependency="settings_encrypt_backups"
+    android:key="settings_openpgp_key"
+    android:title="@string/settings_openpgp_key"
+    app:iconSpaceReserved="false" />
+  
+  <SwitchPreference
+    android:defaultValue="true"
+    android:dependency="settings_encrypt_backups"
+    android:key="settings_sign_encrypted_backups"
+    android:title="@string/settings_sign_encrypted_backups"
+    app:iconSpaceReserved="false" />
+
 </PreferenceScreen>
