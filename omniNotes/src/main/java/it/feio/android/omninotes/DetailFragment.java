@@ -651,8 +651,8 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
     if (isNoteLocationValid()) {
       if (TextUtils.isEmpty(noteTmp.getAddress())) {
         // alternative: detailFragment.onAddressResolved("");
-        locationTextView.setText(noteTmp.getLatitude() + ", " + noteTmp.getLongitude());
-        locationTextView.setVisibility(View.VISIBLE);
+        binding.fragmentDetailContent.location.setText(noteTmp.getLatitude() + ", " + noteTmp.getLongitude());
+        binding.fragmentDetailContent.location.setVisibility(View.VISIBLE);
       } else {
         binding.fragmentDetailContent.location.setText(noteTmp.getAddress());
         binding.fragmentDetailContent.location.setVisibility(View.VISIBLE);
@@ -1438,7 +1438,7 @@ public class DetailFragment extends BaseFragment implements OnReminderPickedList
             PackageManager.PERMISSION_GRANTED) {
           PermissionsHelper.requestPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE,
               R.string.permission_external_storage_detail_attachment,
-              snackBarPlaceholder, () -> {
+              binding.snackbarPlaceholder, () -> {
                 for (Uri uri2 : uris) {
                   String name = FileHelper.getNameFromUri(mainActivity, uri2);
                   new AttachmentTask(this, uri2, name, this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
