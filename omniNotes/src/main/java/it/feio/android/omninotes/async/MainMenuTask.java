@@ -72,7 +72,7 @@ public class MainMenuTask extends AsyncTask<Void, Void, List<NavigationItem>> {
       mDrawerList.setAdapter(new NavDrawerAdapter(mainActivity, items));
       mDrawerList.setOnItemClickListener((arg0, arg1, position, arg3) -> {
         String navigation = mFragmentWeakReference.get().getResources().getStringArray(R.array
-            .navigation_list_codes)[items.get(position).getArrayIndex()];
+                .navigation_list_codes)[items.get(position).getArrayIndex()];
         if (mainActivity.updateNavigation(navigation)) {
           mDrawerList.setItemChecked(position, true);
           if (mDrawerCategoriesList != null) {
@@ -89,9 +89,9 @@ public class MainMenuTask extends AsyncTask<Void, Void, List<NavigationItem>> {
 
   private boolean isAlive () {
     return mFragmentWeakReference.get() != null
-        && mFragmentWeakReference.get().isAdded()
-        && mFragmentWeakReference.get().getActivity() != null
-        && !mFragmentWeakReference.get().getActivity().isFinishing();
+            && mFragmentWeakReference.get().isAdded()
+            && mFragmentWeakReference.get().getActivity() != null
+            && !mFragmentWeakReference.get().getActivity().isFinishing();
   }
 
 
@@ -103,13 +103,13 @@ public class MainMenuTask extends AsyncTask<Void, Void, List<NavigationItem>> {
     String[] mNavigationArray = mainActivity.getResources().getStringArray(R.array.navigation_list);
     TypedArray mNavigationIconsArray = mainActivity.getResources().obtainTypedArray(R.array.navigation_list_icons);
     TypedArray mNavigationIconsSelectedArray = mainActivity.getResources().obtainTypedArray(R.array
-        .navigation_list_icons_selected);
+            .navigation_list_icons_selected);
 
     final List<NavigationItem> items = new ArrayList<>();
     for (int i = 0; i < mNavigationArray.length; i++) {
       if (!checkSkippableItem(i)) {
         NavigationItem item = new NavigationItem(i, mNavigationArray[i], mNavigationIconsArray.getResourceId(i,
-            0), mNavigationIconsSelectedArray.getResourceId(i, 0));
+                0), mNavigationIconsSelectedArray.getResourceId(i, 0));
         items.add(item);
       }
     }
