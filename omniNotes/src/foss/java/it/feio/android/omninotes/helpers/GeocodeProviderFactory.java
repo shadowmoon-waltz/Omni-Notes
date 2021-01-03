@@ -27,9 +27,7 @@ public class GeocodeProviderFactory extends GeocodeProviderBaseFactory {
     // hides public constructor
   }
 
-  public static LocationProvider getProvider (Context context) {
-    promptHighAccuracyLocationProvider(context);
-
+  public static LocationProvider getProvider(Context context) {
     return new LocationManagerProvider();
   }
 }

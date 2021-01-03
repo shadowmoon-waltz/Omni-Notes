@@ -33,6 +33,8 @@ import it.feio.android.omninotes.db.DbHelper;
 import it.feio.android.omninotes.helpers.BackupHelper;
 import it.feio.android.omninotes.helpers.LogDelegate;
 import it.feio.android.omninotes.helpers.SpringImportHelper;
+import it.feio.android.omninotes.helpers.notifications.NotificationChannels.NotificationChannelNames;
+import it.feio.android.omninotes.helpers.notifications.NotificationsHelper;
 import it.feio.android.omninotes.models.Attachment;
 import it.feio.android.omninotes.models.Note;
 import it.feio.android.omninotes.models.listeners.OnAttachingFileListener;
@@ -77,12 +79,12 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
 //    }
 
 
-  public DataBackupIntentService () {
+  public DataBackupIntentService() {
     super("DataBackupIntentService");
   }
 
   @Override
-  protected void onHandleIntent (Intent intent) {
+  protected void onHandleIntent(Intent intent) {
     prefs = getSharedPreferences(PREFS_NAME, MODE_MULTI_PROCESS);
 
     mNotificationsHelper = new NotificationsHelper(this).start(NotificationChannelNames.BACKUPS,
@@ -91,7 +93,8 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
     // If an alarm has been fired a notification must be generated
     if (ACTION_DATA_EXPORT.equals(intent.getAction())) {
       exportData(intent);
-    } else if (ACTION_DATA_IMPORT.equals(intent.getAction()) || ACTION_DATA_IMPORT_LEGACY.equals(intent.getAction())) {
+    } else if (ACTION_DATA_IMPORT.equals(intent.getAction()) || ACTION_DATA_IMPORT_LEGACY
+        .equals(intent.getAction())) {
       importData(intent);
     } else if (SpringImportHelper.ACTION_DATA_IMPORT_SPRINGPAD.equals(intent.getAction())) {
       importDataFromSpringpad(intent, mNotificationsHelper);
@@ -100,14 +103,15 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
     }
   }
 
-  private void importDataFromSpringpad (Intent intent, NotificationsHelper mNotificationsHelper) {
-    new SpringImportHelper(OmniNotes.getAppContext()).importDataFromSpringpad(intent, mNotificationsHelper);
+  private void importDataFromSpringpad(Intent intent, NotificationsHelper mNotificationsHelper) {
+    new SpringImportHelper(OmniNotes.getAppContext())
+        .importDataFromSpringpad(intent, mNotificationsHelper);
     String title = getString(R.string.data_import_completed);
     String text = getString(R.string.click_to_refresh_application);
     createNotification(intent, this, title, text, null);
   }
 
-  private synchronized void exportData (Intent intent) {
+  private synchronized void exportData(Intent intent) {
 
     boolean result = true;
 
@@ -269,7 +273,7 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
   }
 
 
-  private synchronized void importData (Intent intent) {
+  private synchronized void importData(Intent intent) {
 
     boolean importLegacy = ACTION_DATA_IMPORT_LEGACY.equals(intent.getAction());
 
@@ -302,7 +306,7 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
 //        }
   }
 
-  private synchronized void deleteData (Intent intent) {
+  private synchronized void deleteData(Intent intent) {
 
     // Gets backup folder
     String backupName = intent.getStringExtra(INTENT_BACKUP_NAME);
@@ -320,7 +324,8 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
   /**
    * Creation of notification on operations completed
    */
-  private void createNotification (Intent intent, Context mContext, String title, String message, File backupDir) {
+  private void createNotification(Intent intent, Context mContext, String title, String message,
+      File backupDir) {
 
     // The behavior differs depending on intent action
     Intent intentLaunch;
@@ -341,8 +346,8 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
     NotificationsHelper notificationsHelper = new NotificationsHelper(mContext);
     notificationsHelper.createStandardNotification(NotificationChannelNames.BACKUPS,
         R.drawable.ic_content_save_white_24dp, title, notifyIntent)
-                        .setMessage(message).setRingtone(prefs.getString("settings_notification_ringtone", null))
-                        .setLedActive();
+        .setMessage(message).setRingtone(prefs.getString("settings_notification_ringtone", null))
+        .setLedActive();
     if (prefs.getBoolean("settings_notification_vibration", true)) {
       notificationsHelper.setVibration();
     }
@@ -353,7 +358,7 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
   /**
    * Schedules reminders
    */
-  private void resetReminders () {
+  private void resetReminders() {
     LogDelegate.d("Resettings reminders");
     for (Note note : DbHelper.getInstance().getNotesWithReminderNotFired()) {
       ReminderHelper.addReminder(OmniNotes.getAppContext(), note);
@@ -362,13 +367,13 @@ public class DataBackupIntentService extends IntentService implements OnAttachin
 
 
   @Override
-  public void onAttachingFileErrorOccurred (Attachment mAttachment) {
+  public void onAttachingFileErrorOccurred(Attachment mAttachment) {
     // TODO Auto-generated method stub
   }
 
 
   @Override
-  public void onAttachingFileFinished (Attachment mAttachment) {
+  public void onAttachingFileFinished(Attachment mAttachment) {
     // TODO Auto-generated method stub
   }
 

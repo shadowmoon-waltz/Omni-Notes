@@ -20,14 +20,18 @@ package it.feio.android.omninotes.async.bus;
 import it.feio.android.omninotes.helpers.LogDelegate;
 import it.feio.android.omninotes.models.Note;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 
 public class NotesUpdatedEvent {
 
-  public List<Note> notes;
+  @Getter
+  @Setter
+  private List<Note> notes;
 
 
-  public NotesUpdatedEvent (List<Note> notes) {
+  public NotesUpdatedEvent(List<Note> notes) {
     LogDelegate.d(this.getClass().getName());
     this.notes = notes;
   }

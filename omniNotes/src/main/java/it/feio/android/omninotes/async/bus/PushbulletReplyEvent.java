@@ -18,13 +18,17 @@
 package it.feio.android.omninotes.async.bus;
 
 import it.feio.android.omninotes.helpers.LogDelegate;
+import lombok.Getter;
+import lombok.Setter;
 
 
 public class PushbulletReplyEvent {
 
-  public String message;
+  @Getter
+  @Setter
+  private String message;
 
-  public PushbulletReplyEvent (String message) {
+  public PushbulletReplyEvent(String message) {
     LogDelegate.d(this.getClass().getName());
     this.message = message;
   }
