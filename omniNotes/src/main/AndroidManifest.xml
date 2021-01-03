@@ -35,7 +35,7 @@
   <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT" />
   <uses-permission android:name="com.pushbullet.android.permission.READ_MESSAGING_EXTENSION_DATA" />
   <uses-permission android:name="com.pushbullet.android.permission.SEND_MESSAGES" />
-  <uses-permission android:name="android.permission.WAKE_LOCK"/>
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
 
   <uses-feature
     android:name="android.hardware.camera"
@@ -73,55 +73,59 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
 
-      <meta-data android:name="android.app.shortcuts"
+      <meta-data
+        android:name="android.app.shortcuts"
         android:resource="@xml/shortcuts" />
 
       <intent-filter>
         <action android:name="android.intent.action.SEARCH" />
       </intent-filter>
 
-        <intent-filter>
-          <data android:scheme="app" android:host="omninotes" />
-          <action android:name="android.intent.action.VIEW" />
-          <category android:name="android.intent.category.DEFAULT" />
-          <category android:name="android.intent.category.BROWSABLE" />
+      <intent-filter>
+        <data
+          android:scheme="app"
+          android:host="omninotes" />
+        <action android:name="android.intent.action.VIEW" />
 
-        </intent-filter>
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
 
-        <meta-data
-          android:name="android.app.searchable"
-          android:resource="@xml/searchable" />
+      </intent-filter>
 
-        <intent-filter>
-          <action android:name="com.google.android.gm.action.AUTO_SEND" />
+      <meta-data
+        android:name="android.app.searchable"
+        android:resource="@xml/searchable" />
 
-          <category android:name="android.intent.category.DEFAULT" />
+      <intent-filter>
+        <action android:name="com.google.android.gm.action.AUTO_SEND" />
 
-          <data android:mimeType="*/*" />
-        </intent-filter>
-        <intent-filter>
-          <action android:name="android.intent.action.SEND" />
+        <category android:name="android.intent.category.DEFAULT" />
 
-          <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="*/*" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.SEND" />
 
-          <data android:mimeType="*/*" />
-        </intent-filter>
-        <intent-filter>
-          <action android:name="android.intent.action.SEND_MULTIPLE" />
+        <category android:name="android.intent.category.DEFAULT" />
 
-          <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="*/*" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.SEND_MULTIPLE" />
 
-          <data android:mimeType="*/*" />
-        </intent-filter>
+        <category android:name="android.intent.category.DEFAULT" />
 
-        <intent-filter>
-          <action android:name="android.intent.action.VIEW" />
+        <data android:mimeType="*/*" />
+      </intent-filter>
 
-          <category android:name="android.intent.category.DEFAULT" />
-          <category android:name="android.intent.category.BROWSABLE" />
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
 
-          <data android:scheme="hashtag" />
-        </intent-filter>
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <data android:scheme="hashtag" />
+      </intent-filter>
 
     </activity>
 
@@ -213,7 +217,7 @@
     <!-- Restore on reboot alarm service -->
     <service
       android:name=".async.AlarmRestoreOnRebootService"
-      android:permission="android.permission.BIND_JOB_SERVICE"/>
+      android:permission="android.permission.BIND_JOB_SERVICE" />
 
     <!-- Notification listener service -->
     <service
