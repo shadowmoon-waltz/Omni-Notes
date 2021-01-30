@@ -125,6 +125,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
 
@@ -1631,13 +1632,18 @@ public class ListFragment extends BaseFragment implements OnViewTouchedListener,
       note.setContent(sb.toString());
     }
 
-    // Removes unchecked tags
-    Pair<String, String> titleAndContent = TagsHelper.removeTag(note.getTitle(), note.getContent(),
-        taggingResult.second);
-    note.setTitle(titleAndContent.first);
-    note.setContent(titleAndContent.second);
+    eventuallyRemoveDeselectedTags(note, taggingResult.second);
 
     DbHelper.getInstance().updateNote(note, false);
+  }
+
+  private void eventuallyRemoveDeselectedTags(Note note, List<Tag> tagsToRemove) {
+    if (CollectionUtils.isNotEmpty(tagsToRemove)) {
+      String titleWithoutTags = TagsHelper.removeTags(note.getTitle(), tagsToRemove);
+      note.setTitle(titleWithoutTags);
+      String contentWithoutTags = TagsHelper.removeTags(note.getContent(), tagsToRemove);
+      note.setContent(contentWithoutTags);
+    }
   }
 
 //	private void synchronizeSelectedNotes() {
