@@ -326,7 +326,7 @@ public class StorageHelper {
 
 
   public static File getBackupArchive(String backupName) {
-    File backupArchive = new File(getExternalStoragePublicDir(), backupName);
+    File backupArchive = new File(getOrCreateExternalStoragePublicDir(), backupName);
     return backupArchive;
   }
   

@@ -182,12 +182,13 @@ public final class BackupHelper {
 
     int exported = 0;
     int failed = 0;
-    boolean earlyExit = false;
+    String failedString = "";
+
     for (Attachment attachment : list) {
       try (InputStream is = OmniNotes.getAppContext().getContentResolver().openInputStream(attachment.getUri())) {
         exportAttachment(destinationattachmentsDir, zos, attachment);
         ++exported;
-      } catch (BackupAttachmentException e) {
+      } catch (Exception e) {
         ++failed;
         result = false;
         failedString = " (" + failed + " " + OmniNotes.getAppContext().getString(R.string.failed) + ")";
@@ -221,11 +222,11 @@ public final class BackupHelper {
     }
   }
 
-  private static void exportAttachment(File attachmentsDestination, ZipOutputStream zos, Attachment attachment)
+  private static void exportAttachment(String destinationattachmentsDir, ZipOutputStream zos, Attachment attachment)
       throws BackupAttachmentException {
     try {
       InputStream is = OmniNotes.getAppContext().getContentResolver().openInputStream(attachment.getUri());
-      String destFilename = attachmentsDestination + System.getProperty("file.separator") +
+      String destFilename = destinationattachmentsDir + System.getProperty("file.separator") +
           FilenameUtils.getName(attachment.getUriPath());
       zos.putNextEntry(new ZipEntry(destFilename));
       IOUtils.copy(is, zos);
