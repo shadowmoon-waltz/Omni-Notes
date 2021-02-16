@@ -101,6 +101,15 @@ import org.openintents.openpgp.util.OpenPgpKeyPreference;
 import org.openintents.openpgp.util.OpenPgpServiceConnection;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.util.ArrayList;
+import it.feio.android.omninotes.models.Attachment;
+import it.feio.android.omninotes.db.DbHelper;
+import java.io.InputStream;
+import java.nio.file.Files;
+import it.feio.android.omninotes.utils.StorageHelper;
+import android.database.Cursor;
+import android.provider.OpenableColumns;
+import android.util.ArraySet;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
@@ -631,6 +640,123 @@ public class SettingsFragment extends PreferenceFragmentCompat {
       });
     }
 
+    // Delete Unused Attachments
+    Preference deleteUnusedAttachments = findPreference("delete_unused_attachment_files");
+    if (deleteUnusedAttachments != null) {
+      deleteUnusedAttachments.setOnPreferenceClickListener(arg0 -> {
+      
+        ArrayList<Attachment> list = DbHelper.getInstance().getAllAttachments();
+        //StringBuilder sb = new StringBuilder();
+        File ad = StorageHelper.getAttachmentDir();
+        
+        ArraySet<File> files = new ArraySet<File>();
+        ArraySet<File> afiles = new ArraySet<File>();
+
+        try {
+          Files.walk(ad.toPath()).forEach(path -> {
+            File f = path.toFile();
+            if (f.isFile()) {
+              files.add(f);
+            }
+          });
+        } catch (Exception e) {
+        
+        }
+        
+        for (Attachment a : list) {
+          boolean exists = false;
+          long len = 0;
+          try (InputStream is = OmniNotes.getAppContext().getContentResolver().openInputStream(a.getUri())) {
+            exists = true;
+            len = is.available();
+          } catch (Exception e) {
+          
+          }
+          if (len < a.getLength()) {
+            len = a.getLength();
+          }
+          if (len < a.getSize()) {
+            len = a.getSize();
+          }
+          
+          File f = new File(StorageHelper.getAttachmentDir(), a.getUriPath().substring(a.getUriPath().lastIndexOf("/") + 1)); //getFileName(a.getUri());
+          if (!f.exists()) {
+            exists = false;
+          }
+          files.remove(f);
+          afiles.add(f);
+          
+          //sb.append("Attachment id " + a.getId() + ", uri " + a.getUriPath() + ", fn " + f + ", name " + a.getName() + ", length " + len + ", mime type " + a.getMime_type() + ", exists " + f.exists() + "\n");
+        }
+        
+        long dellen = 0;
+        for (File f : files) {
+          try {
+            long len = f.length();
+            dellen += len;
+          } catch (Exception e) {
+          
+          }
+        }
+
+        /*if (!files.isEmpty()) {
+          sb.append("\nStragglers\n");
+          for (File f : files) {
+            sb.append(f + "\n");
+          }
+        }
+        
+        if (!afiles.isEmpty()) {
+          sb.append("\nWill Keep\n");
+          for (File f : afiles) {
+            sb.append(f + "\n");
+          }
+        }*/
+        
+        if (files.isEmpty()) {
+          new MaterialDialog.Builder(getContext())
+              .content("No unused attachment files (out of " + afiles.size() + " total files) were found")
+              .positiveText("OK")
+              .build().show();
+        } else {
+          String s;
+          if (dellen >= 1024L*1024*1024*1024) {
+            s = dellen/(1024L*1024*1024*1024) + " TiB";
+          } else if (dellen >= 1024L*1024*1024) {
+            s = dellen/(1024L*1024*1024) + " GiB";
+          } else if (dellen >= 1024L*1024) {
+            s = dellen/(1024L*1024) + " MiB";
+          } else if (dellen >= 1024L) {
+            s = dellen/1024L + " KiB";
+          } else {
+            s = dellen + " bytes";
+          }
+          new MaterialDialog.Builder(getContext())
+              .content(files.size() + " unused attachment files (out of " + (files.size() + afiles.size()) + " total files) can be deleted, saving approximately " + s + "). Would you like to delete these files?")
+              .positiveText("Yes")
+              .negativeText("No")
+              .onPositive((dialog, which) -> {
+                int successful = 0;
+                for(File f : files) {
+                  try {
+                    if (f.delete()) {
+                      successful += 1;
+                    }
+                  } catch (Exception e) {
+                
+                  }
+                }
+                new MaterialDialog.Builder(getContext())
+                    .content((successful == files.size()) ? "All unused attachment files were successfully deleted" : (successful + " of " + files.size() + " unused attachment files were successfully deleted"))
+                    .positiveText("OK")
+                    .build().show();
+              })
+              .build().show();
+        }
+        return false;
+      });
+    }
+    
     // Logs on files activation
     final SwitchPreference enableFileLogging = findPreference(PREF_ENABLE_FILE_LOGGING);
     if (enableFileLogging != null) {
@@ -665,6 +791,31 @@ public class SettingsFragment extends PreferenceFragmentCompat {
       });
     }
   }
+  
+  // https://stackoverflow.com/questions/5568874/how-to-extract-the-file-name-from-uri-returned-from-intent-action-get-content
+  /*
+  private static String getFileName(Uri uri) {
+    String result = null;
+    if (uri.getScheme().equals("content")) {
+      Cursor cursor = OmniNotes.getAppContext().getContentResolver().query(uri, null, null, null, null);
+      try {
+        if (cursor != null && cursor.moveToFirst()) {
+          result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+        }
+      } finally {
+        cursor.close();
+      }
+    }
+    if (result == null) {
+      result = uri.getPath();
+      int cut = result.lastIndexOf('/');
+      if (cut != -1) {
+        result = result.substring(cut + 1);
+      }
+    }
+    return result;
+  }
+  */
 
 
   private void importNotes() {
